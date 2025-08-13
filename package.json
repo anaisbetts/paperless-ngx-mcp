@@ -1,0 +1,29 @@
+{
+  "name": "paperless-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "biome check",
+    "f": "biome check --fix --unsafe",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "luxon": "^3.7.1",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2",
+    "@types/bun": "^1.2.19",
+    "@types/luxon": "^3.7.1",
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.3"
+  },
+  "trustedDependencies": [
+    "@biomejs/biome",
+    "@tailwindcss/oxide",
+    "esbuild",
+    "sharp",
+    "unrs-resolver"
+  ]
+}
