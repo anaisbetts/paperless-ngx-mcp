@@ -22,5 +22,11 @@ export async function createPaperlessClient(
     return acc
   }, new Map<number, components['schemas']['Tag']>())
 
+  console.error(
+    Array.from(tagMap.entries())
+      .map(([id, tag]) => `${id}: ${tag.name}`)
+      .join('\n')
+  )
+
   return [client, tagMap]
 }

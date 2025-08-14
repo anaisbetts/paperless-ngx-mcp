@@ -67,6 +67,9 @@ function createDocumentHandlers(
         params: { query },
       })
 
+      console.error(`search_documents ${JSON.stringify(query)}`)
+      console.error(JSON.stringify(ret.data))
+
       if (!ret.data || ret.data?.results.length === 0) {
         return {
           content: [{ type: 'text', text: 'No documents found' }],
@@ -98,6 +101,9 @@ function createDocumentHandlers(
           path: { id: args.documentId },
         },
       })
+
+      console.error(`get_document ${args.documentId}`)
+      console.error(JSON.stringify(ret.data))
 
       if (!ret.data) {
         return {
