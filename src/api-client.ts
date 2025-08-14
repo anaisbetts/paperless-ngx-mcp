@@ -3,6 +3,7 @@ import { components, paths } from './api'
 
 export type PaperlessClient = Client<paths>
 export type TagMap = Map<number, components['schemas']['Tag']>
+export type PaperlessDocument = components['schemas']['Document']
 
 export async function createPaperlessClient(
   baseUrl: string,

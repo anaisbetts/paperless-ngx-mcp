@@ -5,7 +5,12 @@ import {
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { ZodRawShape, z } from 'zod'
 import { components } from './api'
-import { createPaperlessClient, PaperlessClient, TagMap } from './api-client'
+import {
+  createPaperlessClient,
+  PaperlessClient,
+  PaperlessDocument,
+  TagMap,
+} from './api-client'
 
 export async function createServer(
   paperlessServer: string,
@@ -80,14 +85,51 @@ function createDocumentHandlers(
       }
     })
   )
+
+  server.tool(
+    'get_document',
+    'Get a document by ID',
+    {
+      documentId: z.number().describe('The ID of the document to get'),
+    },
+    catchAndReportErrors(async (args) => {
+      const ret = await paperlessClient.GET('/api/documents/{id}/', {
+        params: {
+          path: { id: args.documentId },
+        },
+      })
+
+      if (!ret.data) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `Document with ID ${args.documentId} not found`,
+            },
+          ],
+        }
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: renderDocument(ret.data, tagMap, true),
+          },
+        ],
+      }
+    })
+  )
 }
 
 function renderDocument(
-  doc: components['schemas']['Document'],
-  tagMap: TagMap
+  doc: PaperlessDocument,
+  tagMap: TagMap,
+  fullContent = false
 ) {
   let content = doc.content ?? ''
-  if (content.length > 500) {
+  if (!fullContent && content.length > 500) {
     content =
       content.slice(0, 500) +
       '\nDocument truncated, request document by ID to fetch full contents'
