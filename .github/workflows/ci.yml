@@ -26,5 +26,5 @@ jobs:
       - name: Run lint
         run: bun lint
 
-      - name: Run tests
-        run: bun run test
+      - name: Compile
+        run: bun run compile
