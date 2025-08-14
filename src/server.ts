@@ -4,47 +4,103 @@ import {
 } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { ZodRawShape, z } from 'zod'
-import { createPaperlessClient, PaperlessClient } from './api-client'
+import { components } from './api'
+import { createPaperlessClient, PaperlessClient, TagMap } from './api-client'
 
-export function createServer(
+export async function createServer(
   paperlessServer: string,
   apiKey: string,
   server: McpServer,
   readOnly = true
 ) {
-  const client = createPaperlessClient(paperlessServer, apiKey)
-  createDocumentHandlers(client, server)
+  const [client, tagMap] = await createPaperlessClient(paperlessServer, apiKey)
+  createDocumentHandlers(client, server, tagMap)
 }
 
 function createDocumentHandlers(
   paperlessClient: PaperlessClient,
-  server: McpServer
+  server: McpServer,
+  tagMap: Map<number, components['schemas']['Tag']>
 ) {
   server.tool(
     'search_documents',
-    'Do a full-text search in Paperless for document content',
+    'Search Paperless documents with optional date filtering',
     {
-      searchTerm: z.string().describe('The search term to use'),
+      searchTerm: z
+        .string()
+        .describe(
+          'The search term to use (searches across title, content, and other fields)'
+        ),
+
+      dateFrom: z
+        .string()
+        .optional()
+        .describe(
+          'Filter documents created on or after this date (YYYY-MM-DD)'
+        ),
+      dateTo: z
+        .string()
+        .optional()
+        .describe(
+          'Filter documents created on or before this date (YYYY-MM-DD)'
+        ),
     },
     catchAndReportErrors(async (args) => {
+      const query: Record<string, any> = {
+        search: args.searchTerm,
+      }
+
+      if (args.dateFrom) {
+        query.created__date__gte = args.dateFrom
+      }
+
+      if (args.dateTo) {
+        query.created__date__lte = args.dateTo
+      }
+
       const ret = await paperlessClient.GET('/api/documents/', {
-        params: {
-          query: {
-            content__icontains: args.searchTerm,
-          },
-        },
+        params: { query },
       })
+
+      if (!ret.data || ret.data?.results.length === 0) {
+        return {
+          content: [{ type: 'text', text: 'No documents found' }],
+        }
+      }
 
       return {
         content: [
           {
             type: 'text',
-            text: ret.data?.results[0].content ?? '',
+            text: ret
+              .data!.results.map((d) => renderDocument(d, tagMap))
+              .join('\n---\n'),
           },
         ],
       }
     })
   )
+}
+
+function renderDocument(
+  doc: components['schemas']['Document'],
+  tagMap: TagMap
+) {
+  let content = doc.content ?? ''
+  if (content.length > 500) {
+    content =
+      content.slice(0, 500) +
+      '\nDocument truncated, request document by ID to fetch full contents'
+  }
+
+  return `
+    Title: ${doc.title ?? doc.original_file_name}
+    ID: ${doc.id}
+    Created: ${doc.created}
+    ${doc.notes ? `Notes: ${doc.notes}` : ''}
+    Tags: ${doc.tags.map((t) => tagMap.get(t)?.name).join(', ')}
+    Content: ${content}
+  `
 }
 
 function catchAndReportErrors<Args extends ZodRawShape>(
