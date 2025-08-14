@@ -30,11 +30,7 @@
         "useSortedClasses": "error"
       }
     },
-    "includes": [
-      "**",
-      "!**/node_modules/**",
-      "!**/vite.config.ts"
-    ]
+    "includes": ["**", "!**/node_modules/**", "!**/vite.config.ts"]
   },
   "javascript": {
     "formatter": {
