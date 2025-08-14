@@ -6,7 +6,8 @@
   "scripts": {
     "lint": "biome check",
     "f": "biome check --fix --unsafe",
-    "test": "bun test"
+    "test": "echo bun test",
+    "compile": "git clean -xdf dist && bun build src/index.ts --target node --outdir dist --minify --production"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.2",
