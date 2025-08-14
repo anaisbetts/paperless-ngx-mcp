@@ -53,6 +53,7 @@ function createDocumentHandlers(
     catchAndReportErrors(async (args) => {
       const query: Record<string, any> = {
         search: args.searchTerm,
+        page_size: 100000,
       }
 
       if (args.dateFrom) {

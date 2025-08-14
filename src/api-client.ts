@@ -16,7 +16,10 @@ export async function createPaperlessClient(
     },
   })
 
-  const tags = await client.GET('/api/tags/', {})
+  const tags = await client.GET('/api/tags/', {
+    params: { query: { page_size: 10000 } },
+  })
+
   const tagMap = tags.data!.results.reduce((acc, tag) => {
     acc.set(tag.id, tag)
     return acc
@@ -25,7 +28,7 @@ export async function createPaperlessClient(
   console.error(
     Array.from(tagMap.entries())
       .map(([id, tag]) => `${id}: ${tag.name}`)
-      .join('\n')
+      .join(',')
   )
 
   return [client, tagMap]
