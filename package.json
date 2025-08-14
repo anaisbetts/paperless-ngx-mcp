@@ -1,6 +1,6 @@
 {
   "name": "@anaisbetts/paperless-ngx",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "private": false,
   "type": "module",
   "author": "Ani Betts <anais@anaisbetts.com>",
@@ -17,7 +17,8 @@
     "lint": "biome check",
     "f": "biome check --fix --unsafe",
     "test": "echo bun test",
-    "compile": "git clean -xdf dist && bun build src/index.ts --target node --outdir dist --minify --production"
+    "compile": "git clean -xdf dist && bun build src/index.ts --target node --outdir dist --minify --production && shx chmod +x dist/index.js",
+    "prepublishOnly": "bun run compile"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.2",
@@ -32,6 +33,7 @@
     "@types/luxon": "^3.7.1",
     "@types/node": "^24.1.0",
     "openapi-typescript": "^7.9.1",
+    "shx": "^0.4.0",
     "typescript": "^5.8.3"
   },
   "trustedDependencies": [
