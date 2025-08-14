@@ -92,7 +92,7 @@ function createDocumentHandlers(
 
   server.tool(
     'get_document',
-    'Get a document by ID',
+    'Get the full contents of the document text, by ID',
     {
       documentId: z.number().describe('The ID of the document to get'),
     },
