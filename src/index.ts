@@ -1,8 +1,10 @@
+#!/usr/bin/env node
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { config } from 'dotenv'
 import * as pkg from '../package.json'
-import { createPaperlessClient } from './api-client'
+//import { createPaperlessClient } from './api-client'
 import { createServer } from './server'
 
 // Load environment variables
