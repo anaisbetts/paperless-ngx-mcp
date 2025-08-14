@@ -3,9 +3,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { config } from 'dotenv'
 import * as pkg from '../package.json'
 import { createPaperlessClient } from './api-client'
+import { createServer } from './server'
 
 // Load environment variables
-config()
+config({ quiet: true })
 
 const paperlessServer = process.env.PAPERLESS_SERVER
 const apiKey = process.env.PAPERLESS_API_KEY
@@ -36,8 +37,9 @@ async function main(args: string[]) {
     version: pkg.version,
   })
 
-  const transport = new StdioServerTransport()
+  await createServer(paperlessServer!, apiKey!, server)
 
+  const transport = new StdioServerTransport()
   await server.connect(transport)
 
   return 0

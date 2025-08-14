@@ -140,7 +140,7 @@ function renderDocument(
     ID: ${doc.id}
     Created: ${doc.created}
     ${doc.notes ? `Notes: ${doc.notes}` : ''}
-    Tags: ${doc.tags.map((t) => tagMap.get(t)?.name).join(', ')}
+    Tags: ${doc.tags.map((t) => tagMap.get(t)?.name).join(',')}
     Content: ${content}
   `
 }
