@@ -137,6 +137,9 @@ function createDocumentHandlers(
     })
   )
 
+  /* NB: Unfortuantely Claude Desktop doesn't support embedded resources, so
+     we should nerf this so that it doesn't try to use it then fail 
+
   server.tool(
     'download_document',
     'Download the document, usually as a PDF',
@@ -227,6 +230,8 @@ function createDocumentHandlers(
       }
     })
   )
+
+  */
 }
 
 function renderDocument(
