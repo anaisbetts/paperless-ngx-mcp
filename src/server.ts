@@ -3,12 +3,17 @@ import {
   ToolCallback,
 } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
+import { pathToFileURL } from 'url'
 import { ZodRawShape, z } from 'zod'
 import { components } from './api'
 import {
   createPaperlessClient,
   PaperlessClient,
   PaperlessDocument,
+  PaperlessExtraMethods,
   TagMap,
 } from './api-client'
 
@@ -18,14 +23,18 @@ export async function createServer(
   server: McpServer,
   readOnly = true
 ) {
-  const [client, tagMap] = await createPaperlessClient(paperlessServer, apiKey)
-  createDocumentHandlers(client, server, tagMap)
+  const [client, tagMap, extraMethods] = await createPaperlessClient(
+    paperlessServer,
+    apiKey
+  )
+  createDocumentHandlers(client, server, tagMap, extraMethods)
 }
 
 function createDocumentHandlers(
   paperlessClient: PaperlessClient,
   server: McpServer,
-  tagMap: Map<number, components['schemas']['Tag']>
+  tagMap: Map<number, components['schemas']['Tag']>,
+  extraMethods: PaperlessExtraMethods
 ) {
   server.tool(
     'search_documents',
@@ -104,7 +113,6 @@ function createDocumentHandlers(
       })
 
       console.error(`get_document ${args.documentId}`)
-      console.error(JSON.stringify(ret.data))
 
       if (!ret.data) {
         return {
@@ -125,6 +133,97 @@ function createDocumentHandlers(
             text: renderDocument(ret.data, tagMap, true),
           },
         ],
+      }
+    })
+  )
+
+  server.tool(
+    'download_document',
+    'Download the document, usually as a PDF',
+    {
+      documentId: z.number().describe('The ID of the document to get'),
+    },
+    catchAndReportErrors(async (args) => {
+      const ret = await paperlessClient.GET('/api/documents/{id}/', {
+        params: {
+          path: { id: args.documentId },
+        },
+      })
+
+      console.error(`get_document ${args.documentId}`)
+
+      if (!ret.data) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `Document with ID ${args.documentId} not found`,
+            },
+          ],
+        }
+      }
+
+      // Fetch the document and save to a temp file, then return a resource link
+      const response = await extraMethods.fetchDocument(args.documentId)
+
+      if (!response.ok) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `Failed to download document with ID ${args.documentId}: ${response.status} ${response.statusText}`,
+            },
+          ],
+        }
+      }
+
+      const buffer = await response.arrayBuffer()
+      const contentType =
+        response.headers.get('content-type') || 'application/octet-stream'
+      const filename =
+        ret.data.original_file_name || `document_${args.documentId}.pdf`
+
+      // Create a temporary file with cross-platform support
+      const tempDir = os.tmpdir()
+      const sanitizedFilename = filename.replace(/[<>:"/\\|?*]/g, '_') // Sanitize filename for Windows
+      const tempFilePath = path.join(
+        tempDir,
+        `paperless_${args.documentId}_${sanitizedFilename}`
+      )
+
+      console.error(`tempFilePath: ${tempFilePath}`)
+
+      try {
+        // Write the document to the temporary file
+        await fs.promises.writeFile(tempFilePath, Buffer.from(buffer))
+
+        return {
+          content: [
+            {
+              type: 'resource_link',
+              uri: pathToFileURL(tempFilePath).toString(),
+              name: filename,
+              description: `Downloaded document: ${ret.data.title || filename}`,
+              mimeType: contentType,
+              annotations: {
+                audience: ['user'],
+                priority: 0.9,
+              },
+            },
+          ],
+        }
+      } catch (error) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text',
+              text: `Failed to save document to temporary file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            },
+          ],
+        }
       }
     })
   )

@@ -5,16 +5,30 @@ export type PaperlessClient = Client<paths>
 export type TagMap = Map<number, components['schemas']['Tag']>
 export type PaperlessDocument = components['schemas']['Document']
 
+export interface PaperlessExtraMethods {
+  fetchDocument: (id: number) => Promise<Response>
+}
+
 export async function createPaperlessClient(
   baseUrl: string,
   apiKey: string
-): Promise<[PaperlessClient, TagMap]> {
+): Promise<[PaperlessClient, TagMap, PaperlessExtraMethods]> {
   const client = createClient<paths>({
     baseUrl,
     headers: {
       Authorization: `Token ${apiKey}`,
     },
   })
+
+  const downloader = {
+    fetchDocument: (id: number) => {
+      return fetch(`${baseUrl}/api/documents/${id}/download/`, {
+        headers: {
+          Authorization: `Token ${apiKey}`,
+        },
+      })
+    },
+  }
 
   const tags = await client.GET('/api/tags/', {
     params: { query: { page_size: 10000 } },
@@ -31,5 +45,5 @@ export async function createPaperlessClient(
       .join(',')
   )
 
-  return [client, tagMap]
+  return [client, tagMap, downloader]
 }
